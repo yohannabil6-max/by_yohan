@@ -1,0 +1,546 @@
+-- SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+-- OWNER CONFIG
+local OWNER_USERID = 9688772604 -- ganti dengan UserId kamu
+
+-- TOGGLE VARIABLES (visible states for safety)
+local ringPartsEnabled, infJumpEnabled, speedEnabled, noclipEnabled, espEnabled = false,false,false,false,false
+
+-- TROLL CONFIG
+local config = {radius = 100, attractionStrength = 500, spinStrength = 100}
+
+-- VALID KEYS
+local validKeys = {}
+local function fetchKeys()
+    local success, result = pcall(function()
+        return game:HttpGet("https://pastebin.com/raw/Ffbwfj0A")
+    end)
+    if success and typeof(result) == "string" then
+        validKeys = {}
+        for key in result:gmatch("%S+") do
+            validKeys[key] = true
+        end
+    else
+        warn("Gagal fetch key")
+    end
+end
+fetchKeys()
+
+-- ===========================
+-- KEY GUI
+-- ===========================
+local keyGui = Instance.new("ScreenGui")
+keyGui.Name = "BY_YOHAN_KEY"
+keyGui.ResetOnSpawn = false
+keyGui.Parent = PlayerGui
+
+local keyFrame = Instance.new("Frame")
+keyFrame.Size = UDim2.new(0, 300, 0, 180)
+keyFrame.Position = UDim2.new(0.5, -150, 0.5, -90)
+keyFrame.BackgroundColor3 = Color3.fromRGB(255,105,180)
+keyFrame.Parent = keyGui
+Instance.new("UICorner", keyFrame)
+
+-- Dragging keyFrame
+do
+    local draggingKey, dragStartKey, startPosKey = false,nil,nil
+    keyFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            draggingKey = true
+            dragStartKey = input.Position
+            startPosKey = keyFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then draggingKey=false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingKey and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStartKey
+            keyFrame.Position = UDim2.new(startPosKey.X.Scale,startPosKey.X.Offset+delta.X,startPosKey.Y.Scale,startPosKey.Y.Offset+delta.Y)
+        end
+    end)
+end
+
+-- Labels & TextBox
+local keyLabel = Instance.new("TextLabel", keyFrame)
+keyLabel.Size = UDim2.new(1,-20,0,30)
+keyLabel.Position = UDim2.new(0,10,0,10)
+keyLabel.Text = "Masukkan Key untuk membuka menu"
+keyLabel.Font = Enum.Font.SourceSansBold
+keyLabel.TextSize = 18
+keyLabel.TextColor3 = Color3.new(1,1,1)
+keyLabel.BackgroundTransparency = 1
+
+local keyBox = Instance.new("TextBox", keyFrame)
+keyBox.Size = UDim2.new(1,-20,0,40)
+keyBox.Position = UDim2.new(0,10,0,50)
+keyBox.PlaceholderText = "Key..."
+keyBox.ClearTextOnFocus = false
+keyBox.Font = Enum.Font.SourceSans
+keyBox.TextSize = 20
+keyBox.BackgroundColor3 = Color3.fromRGB(255,255,255)
+Instance.new("UICorner", keyBox)
+
+local keyBtn = Instance.new("TextButton", keyFrame)
+keyBtn.Size = UDim2.new(1,-20,0,40)
+keyBtn.Position = UDim2.new(0,10,0,100)
+keyBtn.Text = "Submit Key"
+keyBtn.Font = Enum.Font.SourceSansBold
+keyBtn.TextSize = 18
+keyBtn.BackgroundColor3 = Color3.fromRGB(0,255,0)
+Instance.new("UICorner", keyBtn)
+
+local closeKeyBtn = Instance.new("TextButton", keyFrame)
+closeKeyBtn.Size = UDim2.new(0,35,0,30)
+closeKeyBtn.Position = UDim2.new(1,-40,0,3)
+closeKeyBtn.Text = "×"
+closeKeyBtn.Font = Enum.Font.SourceSansBold
+closeKeyBtn.TextSize = 22
+closeKeyBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+Instance.new("UICorner", closeKeyBtn)
+closeKeyBtn.MouseButton1Click:Connect(function() keyGui:Destroy() end)
+
+local keyInfo = Instance.new("TextLabel", keyFrame)
+keyInfo.Size = UDim2.new(1,-20,0,30)
+keyInfo.Position = UDim2.new(0,10,0,145)
+keyInfo.Text = "Hubungi : 082142469540"
+keyInfo.Font = Enum.Font.SourceSansBold
+keyInfo.TextSize = 16
+keyInfo.TextColor3 = Color3.new(1,1,1)
+keyInfo.BackgroundTransparency = 1
+
+-- ===========================
+-- MAIN MENU GUI
+-- ===========================
+local gui = Instance.new("ScreenGui")
+gui.Name = "BY_YOHAN_GUI"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+gui.Enabled = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,260,0,330)
+main.Position = UDim2.new(0.5,-130,0.5,-150)
+main.BackgroundColor3 = Color3.fromRGB(255,105,180)
+Instance.new("UICorner", main)
+
+-- Dragging main
+do
+    local draggingMain, dragStartMain, startPosMain = false,nil,nil
+    main.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            draggingMain = true
+            dragStartMain = input.Position
+            startPosMain = main.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then draggingMain=false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingMain and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStartMain
+            main.Position = UDim2.new(startPosMain.X.Scale,startPosMain.X.Offset+delta.X,startPosMain.Y.Scale,startPosMain.Y.Offset+delta.Y)
+        end
+    end)
+end
+
+-- Title Bar
+local titleBar = Instance.new("Frame", main)
+titleBar.Size = UDim2.new(1,0,0,35)
+titleBar.BackgroundColor3 = Color3.fromRGB(255,105,180)
+Instance.new("UICorner", titleBar)
+
+local titleLabel = Instance.new("TextLabel", titleBar)
+titleLabel.Size = UDim2.new(1,-40,1,0)
+titleLabel.Position = UDim2.new(0,10,0,0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "BY YOHAN"
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 22
+titleLabel.TextColor3 = Color3.new(1,1,1)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local closeBtn = Instance.new("TextButton", titleBar)
+closeBtn.Size = UDim2.new(0,35,0,30)
+closeBtn.Position = UDim2.new(1,-40,0,3)
+closeBtn.Text = "×"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 22
+closeBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+Instance.new("UICorner", closeBtn)
+if LocalPlayer.UserId==OWNER_USERID then
+    closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+else
+    closeBtn.Active=false
+    closeBtn.AutoButtonColor=false
+end
+
+-- Buttons Frame
+local buttonsFrame = Instance.new("ScrollingFrame", main)
+buttonsFrame.Size = UDim2.new(1,-20,1,-60)
+buttonsFrame.Position = UDim2.new(0,10,0,45)
+buttonsFrame.CanvasSize = UDim2.new(0,0,0,0)
+buttonsFrame.ScrollBarThickness = 6
+buttonsFrame.BackgroundTransparency = 1
+
+-- ===========================
+-- PROTECTION & HIDDEN CORE (AMAN & NON-INTRUSIVE)
+-- ===========================
+-- Protect important instances (will start watchers after everything dibuat)
+local protectList = {}
+
+-- we will fill protectList after instances exist (to avoid nil)
+table.insert(protectList, {inst = gui, name = "BY_YOHAN_GUI", textProps = {}})
+table.insert(protectList, {inst = keyGui, name = "BY_YOHAN_KEY", textProps = {}})
+table.insert(protectList, {inst = titleLabel, name = "BY YOHAN", textProps = {"Text"}})
+table.insert(protectList, {inst = keyLabel, name = "Masukkan Key untuk membuka menu", textProps = {"Text"}})
+table.insert(protectList, {inst = keyInfo, name = "Hubungi : 082142469540", textProps = {"Text"}})
+
+-- helper restore
+local function restoreInstance(entry)
+    local inst = entry.inst
+    if not inst then return end
+    pcall(function()
+        if not inst:IsDescendantOf(PlayerGui) then
+            inst.Parent = PlayerGui
+        end
+        if entry.name and inst.Name ~= entry.name then
+            inst.Name = entry.name
+        end
+        for _,prop in ipairs(entry.textProps or {}) do
+            if inst[prop] ~= entry.name then
+                inst[prop] = entry.name
+            end
+        end
+    end)
+end
+
+-- watchers (non-blocking)
+for _,entry in ipairs(protectList) do
+    local inst = entry.inst
+    if inst then
+        pcall(function()
+            inst:GetPropertyChangedSignal("Name"):Connect(function()
+                if inst.Name ~= entry.name then
+                    inst.Name = entry.name
+                end
+            end)
+        end)
+        pcall(function()
+            inst.AncestryChanged:Connect(function()
+                if not inst:IsDescendantOf(PlayerGui) then
+                    wait(0.05)
+                    if not inst:IsDescendantOf(PlayerGui) then
+                        inst.Parent = PlayerGui
+                    end
+                end
+            end)
+        end)
+        for _,prop in ipairs(entry.textProps or {}) do
+            pcall(function()
+                if inst[prop] ~= nil then
+                    inst:GetPropertyChangedSignal(prop):Connect(function()
+                        if inst[prop] ~= entry.name then
+                            inst[prop] = entry.name
+                        end
+                    end)
+                end
+            end)
+        end
+    end
+end
+
+-- periodic safety net (light)
+task.spawn(function()
+    while task.wait(2) do
+        for _,entry in ipairs(protectList) do
+            pcall(function() restoreInstance(entry) end)
+        end
+    end
+end)
+
+-- Hidden core container
+_G.__YF = _G.__YF or {}
+local core = _G.__YF
+
+-- deterministic-ish keys
+local function rndname(s)
+    return ("_%s_%s"):format(tostring(s):gsub("%p",""):sub(1,6), tostring(math.floor(tick()*1000)))
+end
+core.k_troll = core.k_troll or rndname("troll")
+core.k_infjump = core.k_infjump or rndname("inf")
+core.k_noclip = core.k_noclip or rndname("noclip")
+core.k_esp = core.k_esp or rndname("esp")
+
+core[core.k_troll] = core[core.k_troll] or false
+core[core.k_infjump] = core[core.k_infjump] or false
+core[core.k_noclip] = core[core.k_noclip] or false
+core[core.k_esp] = core[core.k_esp] or false
+
+local function setFlag(k,val) core[k]=val end
+local function getFlag(k) return core[k] end
+
+-- ===========================
+-- TOGGLE BUTTON FUNCTION (meng-update hidden flags juga)
+-- ===========================
+local function createToggleButton(name, callback, opt_hiddenKey)
+    local state = false
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,-10,0,35)
+    btn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 18
+    btn.Text = name.." (OFF)"
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = name.." ("..(state and "ON" or "OFF")..")"
+        btn.BackgroundColor3 = state and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+        -- call original callback for visible-state logic
+        pcall(function() callback(state) end)
+        -- update hidden flag if provided
+        if opt_hiddenKey then
+            pcall(function() setFlag(opt_hiddenKey, state) end)
+        end
+    end)
+    return btn
+end
+
+-- ===========================
+-- BUTTONS
+-- ===========================
+local trollBtn = createToggleButton("Troll Object", function(state) ringPartsEnabled = state end, core.k_troll)
+local infJumpBtn = createToggleButton("Infinite Jump", function(state) infJumpEnabled = state end, core.k_infjump)
+local speedBtn = createToggleButton("WalkSpeed", function(state)
+    speedEnabled = state
+    if LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = state and 100 or 16 end
+    end
+end, nil) -- speed handled with speedEnabled variable
+local noclipBtn = createToggleButton("No Clip", function(state) noclipEnabled = state end, core.k_noclip)
+local espBtn = createToggleButton("ESP Player", function(state) espEnabled = state end, core.k_esp)
+
+local allBtns = {trollBtn, infJumpBtn, espBtn, speedBtn, noclipBtn}
+for i,b in ipairs(allBtns) do
+    b.Position = UDim2.new(0,0,0,(i-1)*45)
+    b.Parent = buttonsFrame
+end
+buttonsFrame.CanvasSize = UDim2.new(0,0,#allBtns*45,0)
+
+-- ===========================
+-- CORE IMPLEMENTATION (hidden functions)
+-- ===========================
+-- Troll / attraction
+core.trollFunc = core.trollFunc or function()
+    local cfg = config
+    while task.wait() do
+        if getFlag(core.k_troll) and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local root = LocalPlayer.Character.HumanoidRootPart
+            for _,part in pairs(workspace:GetDescendants()) do
+                if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(LocalPlayer.Character) then
+                    local dir = root.Position - part.Position
+                    if dir.Magnitude < cfg.radius then
+                        pcall(function()
+                            part.Velocity = dir.Unit * cfg.attractionStrength + Vector3.new(-dir.Z,0,dir.X).Unit * cfg.spinStrength
+                        end)
+                    end
+                end
+            end
+        else
+            task.wait(0.05)
+        end
+    end
+end
+
+-- Infinite jump hookup
+core.infJumpFunc = core.infJumpFunc or function()
+    UserInputService.JumpRequest:Connect(function()
+        if getFlag(core.k_infjump) and LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                pcall(function() hum:ChangeState("Jumping") end)
+            end
+        end
+    end)
+end
+
+-- Noclip
+core.noclipFunc = core.noclipFunc or function()
+    RunService.Stepped:Connect(function()
+        if getFlag(core.k_noclip) then
+            if LocalPlayer.Character then
+                for _,v in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        pcall(function() v.CanCollide = false end)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- ESP create/remove
+core.espCreate = core.espCreate or function(plr)
+    if not plr.Character then return end
+    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+    local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+    if hrp and hum and getFlag(core.k_esp) then
+        if hrp:FindFirstChild("BY_YOHAN_ESP") then return end
+        local box = Instance.new("BoxHandleAdornment")
+        box.Name = "BY_YOHAN_ESP"
+        box.Adornee = hrp
+        box.Size = Vector3.new(2,3,1)
+        box.Color = BrickColor.new("Hot pink")
+        box.AlwaysOnTop = true
+        box.ZIndex = 10
+        box.Parent = hrp
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "BY_YOHAN_BILL"
+        billboard.Adornee = hrp
+        billboard.Size = UDim2.new(0,120,0,50)
+        billboard.StudsOffset = Vector3.new(0,3,0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = hrp
+
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1,0,0.5,0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.Text = plr.Name
+        nameLabel.TextColor3 = Color3.fromRGB(255,105,180)
+        nameLabel.TextScaled = true
+        nameLabel.Font = Enum.Font.SourceSansBold
+        nameLabel.Parent = billboard
+
+        local healthLabel = Instance.new("TextLabel")
+        healthLabel.Size = UDim2.new(1,0,0.5,0)
+        healthLabel.Position = UDim2.new(0,0,0.5,0)
+        healthLabel.BackgroundTransparency = 1
+        healthLabel.Text = "HP: "..math.floor(hum.Health)
+        healthLabel.TextColor3 = Color3.fromRGB(255,105,180)
+        healthLabel.TextScaled = true
+        healthLabel.Font = Enum.Font.SourceSansBold
+        healthLabel.Parent = billboard
+
+        hum:GetPropertyChangedSignal("Health"):Connect(function()
+            pcall(function() healthLabel.Text = "HP: "..math.floor(hum.Health) end)
+        end)
+    end
+end
+
+core.espRemove = core.espRemove or function(plr)
+    if plr.Character then
+        local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            pcall(function()
+                if hrp:FindFirstChild("BY_YOHAN_ESP") then hrp.BY_YOHAN_ESP:Destroy() end
+                if hrp:FindFirstChild("BY_YOHAN_BILL") then hrp.BY_YOHAN_BILL:Destroy() end
+            end)
+        end
+    end
+end
+
+-- run core functions (safe pcall)
+task.spawn(function() pcall(core.trollFunc) end)
+task.spawn(function() pcall(core.infJumpFunc) end)
+task.spawn(function() pcall(core.noclipFunc) end)
+
+-- Heartbeat to manage ESP using hidden flags
+RunService.Heartbeat:Connect(function()
+    for _,plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            if getFlag(core.k_esp) then
+                pcall(function() core.espCreate(plr) end)
+            else
+                pcall(function() core.espRemove(plr) end)
+            end
+        end
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    pcall(function() core.espRemove(plr) end)
+end)
+
+-- ===========================
+-- KEY SUBMIT
+-- ===========================
+keyBtn.MouseButton1Click:Connect(function()
+    local inputKey = keyBox.Text
+    local ok = false
+    pcall(function()
+        if validKeys[inputKey] then ok = true end
+    end)
+    if ok then
+        gui.Enabled = true
+        -- ensure gui parent dan nama benar
+        pcall(function() gui.Parent = PlayerGui; gui.Name = "BY_YOHAN_GUI" end)
+        pcall(function() keyGui:Destroy() end)
+        if LocalPlayer.UserId==OWNER_USERID then
+            local notif = Instance.new("Message",workspace)
+            notif.Text="✅️Login sebagai Owner✅️"
+            delay(2,function() notif:Destroy() end)
+        else
+            local notif = Instance.new("Message",workspace)
+            notif.Text="🟡ANDA LOGIN SEBAGAI VIP🟡"
+            delay(2,function() notif:Destroy() end)
+        end
+    else
+        keyLabel.Text="Key Invalid!"
+        keyLabel.TextColor3=Color3.fromRGB(255,0,0)
+    end
+end)
+
+-- quick anti-tamper message if someone tries to override critical functions (light)
+task.spawn(function()
+    local lastSig = {}
+    lastSig.troll = tostring(core.trollFunc)
+    lastSig.inf = tostring(core.infJumpFunc)
+    lastSig.noclip = tostring(core.noclipFunc)
+    lastSig.esp = tostring(core.espCreate)
+    while task.wait(2) do
+        if tostring(core.trollFunc) ~= lastSig.troll
+        or tostring(core.infJumpFunc) ~= lastSig.inf
+        or tostring(core.noclipFunc) ~= lastSig.noclip
+        or tostring(core.espCreate) ~= lastSig.esp then
+            for _,entry in ipairs(protectList) do restoreInstance(entry) end
+            pcall(function()
+                local m = Instance.new("Message",workspace)
+                m.Text = "⚠️ Script Modification Detected. Restoring... ⚠️"
+                delay(2,function() m:Destroy() end)
+            end)
+            lastSig.troll = tostring(core.trollFunc)
+            lastSig.inf = tostring(core.infJumpFunc)
+            lastSig.noclip = tostring(core.noclipFunc)
+            lastSig.esp = tostring(core.espCreate)
+        end
+    end
+end)
+
+-- ensure speed resets on character respawn
+Players.PlayerAdded:Connect(function(plr)
+    if plr == LocalPlayer then
+        plr.CharacterAdded:Connect(function(char)
+            if speedEnabled then
+                local hum = char:WaitForChild("Humanoid")
+                pcall(function() hum.WalkSpeed = 100 end)
+            end
+        end)
+    end
+end)
+
+-- initial safe parent/restore
+for _,entry in ipairs(protectList) do
+    pcall(function() restoreInstance(entry) end)
+end
